@@ -1,0 +1,18 @@
+[project]
+name = "ybc-yolo"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+  "ultralytics>=8.3.0",
+  "pyyaml>=6.0.1",
+  "typer>=0.12.0",
+]
+
+[project.scripts]
+ybc-yolo = "ybc_yolo.cli.main:app"
+
+[tool.ruff]
+line-length = 100
+
+[tool.black]
+line-length = 100
