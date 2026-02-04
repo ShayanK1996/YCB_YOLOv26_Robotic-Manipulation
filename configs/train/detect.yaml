@@ -1,0 +1,12 @@
+task: detect
+model: yolo26s.pt
+data_yaml: configs/datasets/ybc_detect.yaml
+
+imgsz: 640
+epochs: 100
+batch: 16
+device: 0
+seed: 42
+
+project: runs
+name: ybc_yolo26_detect

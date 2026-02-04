@@ -1,0 +1,9 @@
+path: data/processed/ybc
+train: images/train
+val: images/val
+test: images/test
+
+names:
+  0: class0
+  1: class1
+  2: class2
