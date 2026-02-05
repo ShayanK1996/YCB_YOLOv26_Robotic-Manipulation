@@ -1,7 +1,12 @@
-"""Convert YCB Berkeley RGB highres to YOLO format (object-crop = full-image bbox)."""
+"""Convert YCB Berkeley RGB highres to YOLO format.
+
+Supports two label modes:
+- full-image bbox (legacy sanity-check)
+- tight bbox derived from provided PBM masks (recommended when masks exist)
+"""
 from pathlib import Path
 import shutil
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 from ybc_yolo.utils.io import safe_mkdir, path_hash
 
@@ -47,6 +52,117 @@ def discover_images(raw_root: Path) -> List[Tuple[Path, int]]:
     return out
 
 
+def _mask_path_for_image(img_path: Path) -> Optional[Path]:
+    """Map an image path to its PBM mask path if present."""
+    # Common structure: <obj>/<obj>/N1_0.jpg with masks in <obj>/<obj>/masks/N1_0_mask.pbm
+    cand = img_path.parent / "masks" / f"{img_path.stem}_mask.pbm"
+    if cand.exists():
+        return cand
+    # Alternate: masks could be stored higher up
+    cand2 = img_path.parent.parent / "masks" / f"{img_path.stem}_mask.pbm"
+    if cand2.exists():
+        return cand2
+    return None
+
+
+def _pbm_bbox(mask_path: Path) -> Optional[Tuple[int, int, int, int, int, int]]:
+    """Return (xmin, ymin, xmax, ymax, width, height) for PBM mask foreground (bit=1).
+
+    Supports PBM P1 (ASCII) and P4 (binary). If no foreground is found, returns None.
+    """
+    data = mask_path.read_bytes()
+    if len(data) < 2:
+        return None
+    magic = data[:2].decode(errors="ignore")
+    if magic not in {"P1", "P4"}:
+        return None
+
+    # Tokenize header (skip comments)
+    i = 2
+    tokens: List[bytes] = []
+    while len(tokens) < 2 and i < len(data):
+        # skip whitespace
+        while i < len(data) and data[i] in b" \t\r\n":
+            i += 1
+        if i >= len(data):
+            break
+        if data[i] == ord("#"):
+            # comment to end of line
+            while i < len(data) and data[i] != ord("\n"):
+                i += 1
+            continue
+        # read token
+        j = i
+        while j < len(data) and data[j] not in b" \t\r\n":
+            j += 1
+        tokens.append(data[i:j])
+        i = j
+
+    if len(tokens) < 2:
+        return None
+    w = int(tokens[0])
+    h = int(tokens[1])
+
+    xmin, ymin, xmax, ymax = w, h, -1, -1
+
+    if magic == "P1":
+        # remaining tokens are ASCII 0/1 values
+        # collect bytes from i onward and split
+        body = data[i:].split()
+        n = min(len(body), w * h)
+        for idx in range(n):
+            v = body[idx][:1]
+            if v == b"1":
+                y = idx // w
+                x = idx % w
+                if x < xmin:
+                    xmin = x
+                if x > xmax:
+                    xmax = x
+                if y < ymin:
+                    ymin = y
+                if y > ymax:
+                    ymax = y
+    else:
+        # P4 binary: each row is padded to full bytes, MSB first
+        row_bytes = (w + 7) // 8
+        off = i
+        for y in range(h):
+            row = data[off : off + row_bytes]
+            off += row_bytes
+            if len(row) < row_bytes:
+                break
+            for xb in range(row_bytes):
+                b = row[xb]
+                for bit in range(8):
+                    x = xb * 8 + bit
+                    if x >= w:
+                        break
+                    # PBM: 1 = black
+                    if (b >> (7 - bit)) & 1:
+                        if x < xmin:
+                            xmin = x
+                        if x > xmax:
+                            xmax = x
+                        if y < ymin:
+                            ymin = y
+                        if y > ymax:
+                            ymax = y
+
+    if xmax < xmin or ymax < ymin:
+        return None
+    return xmin, ymin, xmax, ymax, w, h
+
+
+def _bbox_to_yolo(xmin: int, ymin: int, xmax: int, ymax: int, w: int, h: int) -> Tuple[float, float, float, float]:
+    """Convert pixel bbox (inclusive) to YOLO normalized (xc, yc, bw, bh)."""
+    bw = (xmax - xmin + 1) / w
+    bh = (ymax - ymin + 1) / h
+    xc = (xmin + xmax + 1) / 2 / w
+    yc = (ymin + ymax + 1) / 2 / h
+    return xc, yc, bw, bh
+
+
 def berkeley_to_yolo(
     raw_root: Path,
     out_root: Path,
@@ -54,6 +170,7 @@ def berkeley_to_yolo(
     val_ratio: float = 0.2,
     test_ratio: float = 0.1,
     seed: int = 42,
+    label_mode: str = "mask-bbox",
 ) -> None:
     """Convert Berkeley YCB to YOLO dirs (images + labels) with deterministic train/val/test split."""
     assert abs(train_ratio + val_ratio + test_ratio - 1.0) < 1e-6
@@ -85,9 +202,23 @@ def berkeley_to_yolo(
             unique_stem = str(rel.parent).replace("/", "_") + "_" + stem
             dest_img = im_dir / f"{unique_stem}{img_path.suffix}"
             dest_lbl = lb_dir / f"{unique_stem}.txt"
-            shutil.copy2(img_path, dest_img)
-            # YOLO: class_id x_center y_center width height (normalized). Full image = 0.5 0.5 1 1
-            dest_lbl.write_text(f"{class_id} 0.5 0.5 1.0 1.0\n")
+            # Avoid re-copying large images if they already exist
+            if not dest_img.exists():
+                shutil.copy2(img_path, dest_img)
+
+            if label_mode == "full":
+                xc, yc, bw, bh = 0.5, 0.5, 1.0, 1.0
+            else:
+                mask_path = _mask_path_for_image(img_path)
+                bbox = _pbm_bbox(mask_path) if mask_path else None
+                if bbox is None:
+                    # fallback: full-image
+                    xc, yc, bw, bh = 0.5, 0.5, 1.0, 1.0
+                else:
+                    xmin, ymin, xmax, ymax, w, h = bbox
+                    xc, yc, bw, bh = _bbox_to_yolo(xmin, ymin, xmax, ymax, w, h)
+
+            dest_lbl.write_text(f"{class_id} {xc:.6f} {yc:.6f} {bw:.6f} {bh:.6f}\n")
 
     # Write split lists (paths relative to raw_root) for tracking in data/splits
     # Assume out_root is like .../data/processed/ybc → splits = .../data/splits
