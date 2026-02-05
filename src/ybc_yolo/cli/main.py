@@ -3,7 +3,7 @@ from pathlib import Path
 import typer
 
 from ybc_yolo.config.loader import load_yaml
-from ybc_yolo.data.converters.ybc_native import berkeley_to_yolo
+from ybc_yolo.data.converters.ybc_native import berkeley_to_yolo, berkeley_to_yolo_seg
 from ybc_yolo.evaluation.reports import find_latest_run_dir, snapshot_ultralytics_run
 from ybc_yolo.yolo.trainer import run_train, run_val, run_predict, run_export
 
@@ -42,6 +42,35 @@ def prepare(
         label_mode=label_mode,
     )
     typer.echo(f"Done. YOLO dataset at {out_dir}, split lists in data/splits/.")
+
+
+@app.command()
+def prepare_seg(
+    raw_dir: Path = typer.Option(
+        "data/raw/ycb/berkeley",
+        help="Raw YCB Berkeley root (object folders with extracted images + masks)",
+    ),
+    out_dir: Path = typer.Option(
+        "data/processed/ybc_seg",
+        help="Output YOLO-seg dataset root (images/train|val|test, labels/...)",
+    ),
+    train_ratio: float = typer.Option(0.7, help="Train fraction"),
+    val_ratio: float = typer.Option(0.2, help="Val fraction"),
+    test_ratio: float = typer.Option(0.1, help="Test fraction"),
+):
+    """Convert PBM masks into YOLO-seg polygon labels and write dataset."""
+    raw_dir = Path(raw_dir)
+    out_dir = Path(out_dir)
+    if not raw_dir.is_dir():
+        raise SystemExit(f"Raw dir not found: {raw_dir}")
+    berkeley_to_yolo_seg(
+        raw_root=raw_dir,
+        out_root=out_dir,
+        train_ratio=train_ratio,
+        val_ratio=val_ratio,
+        test_ratio=test_ratio,
+    )
+    typer.echo(f"Done. YOLO-seg dataset at {out_dir}.")
 
 
 @app.command()
