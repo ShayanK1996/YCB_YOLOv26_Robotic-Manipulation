@@ -9,3 +9,12 @@ runs/
 *.egg-info/
 cap50_watch.log
 reports/
+*.txt
+*.pbm
+*.jpg
+*.png
+*.jpeg
+*.gif
+*.bmp
+*.tiff
+*.webp
