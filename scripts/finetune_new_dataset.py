@@ -13,8 +13,8 @@ def main():
     # Path to your trained model weights
     pretrained_weights = "runs/segment/runs/ycb_berkeley_yolo26_seg2/weights/best.pt"
     
-    # Path to your new dataset configuration
-    data_yaml = "data/New_dataset/yolo26_ycb.v2i.yolo26/data.yaml"
+    # Path to your new dataset configuration (v3 - no Roboflow augmentation, auto-orient only)
+    data_yaml = "data/New_dataset/yolo26_ycb.v3i.yolo26/data.yaml"
     
     print("=" * 60)
     print("Fine-tuning YCB Berkeley YOLO Model on New Dataset")
@@ -38,7 +38,7 @@ def main():
         patience=20,            # Early stopping patience
         save=True,              # Save checkpoints
         project="runs/segment", # Save location
-        name="finetune_new_dataset",  # Experiment name
+        name="finetune_v3_yolo_aug",  # Experiment name (v3 = no Roboflow aug)
         exist_ok=False,         # Don't overwrite existing runs
         
         # Learning rate settings (lower for fine-tuning)
@@ -52,16 +52,8 @@ def main():
         weight_decay=0.0005,
         dropout=0.0,
         
-        # Data augmentation (you can reduce these for fine-tuning)
-        hsv_h=0.015,
-        hsv_s=0.7,
-        hsv_v=0.4,
-        degrees=0.0,
-        translate=0.1,
-        scale=0.5,
-        fliplr=0.5,
-        mosaic=1.0,
-        mixup=0.0,
+        # Augmentation: use YOLO26 defaults (no overrides) - handles mosaic, mixup,
+        # hsv, degrees, translate, scale, fliplr, erasing, etc. from built-in config
         
         # Validation
         val=True,

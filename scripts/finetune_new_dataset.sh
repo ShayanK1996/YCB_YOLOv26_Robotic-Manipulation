@@ -9,9 +9,9 @@ echo "=========================================="
 
 # Configuration
 PRETRAINED_WEIGHTS="runs/segment/runs/ycb_berkeley_yolo26_seg2/weights/best.pt"
-DATA_YAML="data/New_dataset/yolo26_ycb.v2i.yolo26/data.yaml"
+DATA_YAML="data/New_dataset/yolo26_ycb.v3i.yolo26/data.yaml"
 PROJECT="runs/segment"
-NAME="finetune_new_dataset"
+NAME="finetune_v3_yolo_aug"
 
 # Check if pretrained weights exist
 if [ ! -f "$PRETRAINED_WEIGHTS" ]; then
