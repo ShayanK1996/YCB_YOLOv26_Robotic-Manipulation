@@ -1,0 +1,26 @@
+# YOLO dataset config: YCB Berkeley 17 objects (segmentation)
+path: data/processed/ybc_seg
+train: images/train
+val: images/val
+test: images/test
+
+names:
+  0: chips_can
+  1: master_chef_can
+  2: cracker_box
+  3: sugar_box
+  4: tomato_soup_can
+  5: mustard_bottle
+  6: gelatin_box
+  7: potted_meat_can
+  8: bleach_cleanser
+  9: windex_bottle
+  10: bowl
+  11: mug
+  12: sponge
+  13: wood_block
+  14: medium_clamp
+  15: tennis_ball
+  16: rubiks_cube
+
+nc: 17

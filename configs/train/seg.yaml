@@ -1,12 +1,12 @@
 task: segment
-model: yolo26s-seg.pt
+model: yolo26n-seg.pt
 data_yaml: configs/datasets/ybc_seg.yaml
 
 imgsz: 640
-epochs: 100
+epochs: 50
 batch: 8
 device: 0
 seed: 42
 
 project: runs
-name: ybc_yolo26_seg
+name: ycb_berkeley_yolo26_seg
