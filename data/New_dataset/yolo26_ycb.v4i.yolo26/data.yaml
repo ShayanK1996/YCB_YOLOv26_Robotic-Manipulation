@@ -1,0 +1,14 @@
+path: /home/tnlab_sk/Desktop/YBC_YOLO/data/New_dataset/yolo26_ycb.v4i.yolo26
+train: train/images
+val: valid/images
+test: test/images
+
+nc: 15
+names: ['bowl', 'cleanser', 'coffee_can', 'cracker_box', 'gelatin_box', 'jaco', 'meat_can', 'mug', 'mustard_bottle', 'rubik', 'soup_can', 'tennis_ball', 'windex', 'wooden_block', 'workspace']
+
+roboflow:
+  workspace: prime-taral
+  project: yolo26_ycb
+  version: 4
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/prime-taral/yolo26_ycb/dataset/4
