@@ -13,8 +13,8 @@ def main():
     # Path to your trained model weights
     pretrained_weights = "runs/segment/runs/ycb_berkeley_yolo26_seg2/weights/best.pt"
     
-    # Path to your new dataset configuration (v3 - no Roboflow augmentation, auto-orient only)
-    data_yaml = "data/New_dataset/yolo26_ycb.v3i.yolo26/data.yaml"
+    # Path to your new dataset configuration (v4 - no Roboflow augmentation, auto-orient only)
+    data_yaml = "data/New_dataset/yolo26_ycb.v4i.yolo26/data.yaml"
     
     print("=" * 60)
     print("Fine-tuning YCB Berkeley YOLO Model on New Dataset")
