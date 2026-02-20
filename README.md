@@ -1,6 +1,8 @@
 # YCB Berkeley — YOLO26 Segmentation (Fine-tuned)
 
-Fine-tuned **YOLO26n-seg** model for segmenting YCB objects. Trained on our own annotated data with YOLO26 augmentations, starting from a model pretrained on the YCB Berkeley dataset.
+**Instance segmentation model for YCB objects (YOLO26n-seg), fine-tuned on custom annotations with YOLO26 augmentations.**
+
+Fine-tuned **YOLO26n-seg** model for segmenting YCB objects in images or video. Trained on our own annotated data with YOLO26 augmentations, starting from a model pretrained on the YCB Berkeley dataset. Includes weights and validation figures; no dataset or training code included.
 
 ## Model
 
@@ -43,4 +45,4 @@ Training and validation figures are in `figures/`:
 
 ## License
 
-Weights and figures are shared for research use. Dataset and training code are not included.
+This project is released under the [MIT License](LICENSE). Weights and figures are provided for research and non-commercial use. Dataset and training code are not included in this repository.
