@@ -1,20 +1,26 @@
+# Python
 __pycache__/
 *.pyc
 .venv/
-data/raw/
-data/processed/
-runs/
-*.pt
-.DS_Store
 *.egg-info/
+
+# Logs and reports
 cap50_watch.log
 reports/
-*.txt
-*.pbm
-*.jpg
-*.png
-*.jpeg
-*.gif
-*.bmp
-*.tiff
-*.webp
+
+# Data and training runs (not published)
+data/
+runs/
+
+# Optional: uncomment to publish only weights + figures (no training code)
+# configs/
+# src/
+# scripts/
+# tests/
+
+# Ignore other .pt files but keep the released weight
+*.pt
+!weights/best_finetuned_latest.pt
+
+# OS
+.DS_Store
